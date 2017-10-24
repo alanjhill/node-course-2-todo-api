@@ -21,7 +21,13 @@ app.post('/todos', (request, response) => {
 });
 
 app.get('/todos', (request, response) => {
-
+  Todo.find().then((todos) => {
+    response.send({
+      todos
+    })
+  }, (e) => {
+    response.status(400).send(e);
+  });
 });
 
 
