@@ -1,5 +1,6 @@
 var express = require('express');
 var bodyParser = require('body-parser');
+var {ObjectID} = require('mongodb');
 
 var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
@@ -28,6 +29,17 @@ app.get('/todos', (request, response) => {
   }, (e) => {
     response.status(400).send(e);
   });
+});
+
+app.get('/todos/:id', (request, response) => {
+  var id = request.params.id;
+
+  if (ObjectID.isValid(id)) {
+
+  } else {
+    console.error("Invalid ID", id);
+    response.send(404);
+  }
 });
 
 
