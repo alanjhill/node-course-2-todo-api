@@ -1,3 +1,5 @@
+require('./config/config');
+
 const _ = require('lodash');
 
 const express = require('express');
@@ -100,18 +102,15 @@ app.patch('/todos/:id', (request, response) => {
     body.completedAt = null;
   }
 
-  Todo.findByIdAndUpdate(id,
-    { $set: body },
-    { new: true })
-    .then((todo) => {
-      if (!todo) {
-        response.status(404).send();
-      }
+  Todo.findByIdAndUpdate(id,{ $set: body }, { new: true }).then((todo) => {
+    if (!todo) {
+      response.status(404).send();
+    }
 
-      response.send({ todo });
-    }).catch((error) => {
-      response.status(400).send()
-    });
+    response.send({ todo });
+  }).catch((error) => {
+    response.status(400).send()
+  });
 });
 
 
