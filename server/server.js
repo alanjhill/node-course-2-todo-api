@@ -1,14 +1,14 @@
 require('./config/config');
 
 const _ = require('lodash');
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const { ObjectID } = require('mongodb');
 
-var { mongoose } = require('./db/mongoose');
-var { Todo } = require('./models/todo');
-var { User } = require('./models/user');
+const { mongoose } = require('./db/mongoose');
+const { Todo } = require('./models/todo');
+const { User } = require('./models/user');
+const { authenticate } = require('./middleware/authenticate');
 
 var app = express();
 // Get the port from the environment variable
@@ -102,7 +102,7 @@ app.patch('/todos/:id', (request, response) => {
     body.completedAt = null;
   }
 
-  Todo.findByIdAndUpdate(id,{ $set: body }, { new: true }).then((todo) => {
+  Todo.findByIdAndUpdate(id, { $set: body }, { new: true }).then((todo) => {
     if (!todo) {
       response.status(404).send();
     }
@@ -125,11 +125,15 @@ app.post('/users', (request, response) => {
     return user.generateAuthToken();
   }).then((token) => {
     response.
-    header('x-auth', token).
-    send(user);
+      header('x-auth', token).
+      send(user);
   }).catch((error) => {
     response.status(400).send(error);
   });
+});
+
+app.get('/users/me', authenticate, (request, response) => {
+  response.send(request.user);
 });
 
 // Listen
