@@ -4,27 +4,11 @@ const { ObjectID } = require('mongodb');
 
 const { app } = require('./../server');
 const { Todo } = require('./../models/todo');
+const { User } = require('./../models/user');
+const { todos, populateTodos, users, populateUsers } = require('./seed/seed');
 
-const todos = [
-  {
-    _id: new ObjectID(),
-    text: "First test todo"
-  },
-  {
-    _id: new ObjectID(),
-    text: "Second test todo",
-    completed: true,
-    completedAt: 333
-  }
-];
-
-beforeEach((done) => {
-  Todo.remove({}).then(() => {
-    Todo.insertMany(todos);
-  }).then(() => {
-    done();
-  });
-});
+beforeEach(populateUsers);
+beforeEach(populateTodos);
 
 describe('POST /todos', () => {
   it('should create a new todo', (done) => {
@@ -113,9 +97,9 @@ describe('GET /todos/:id', () => {
 
 describe('DELETE /todos/:id', () => {
   it('should delete a  todo', (done) => {
-      var hexId = todos[1]._id.toHexString();
+    var hexId = todos[1]._id.toHexString();
 
-      request(app)
+    request(app)
       .delete(`/todos/${hexId}`)
       .expect(200)
       .expect((response) => {
@@ -126,37 +110,37 @@ describe('DELETE /todos/:id', () => {
           return done(error);
         }
 
-      Todo.findById(hexId).then((todo) => {
-         expect(todo).toNotExist;
-         done();
-      }).catch((e) => done());
-    });
+        Todo.findById(hexId).then((todo) => {
+          expect(todo).toNotExist;
+          done();
+        }).catch((e) => done());
+      });
   });
 
   it('should return 404 if todo not found', (done) => {
     var hexId = '59fb66fb22c7f09c7ae52889';
     request(app)
-    .delete(`/todos/${hexId}`)
-    .expect(404)
-    .end((error, response) => {
-      if (error) {
-        return done(error);
-      }
-      done();
-    })
+      .delete(`/todos/${hexId}`)
+      .expect(404)
+      .end((error, response) => {
+        if (error) {
+          return done(error);
+        }
+        done();
+      })
   });
 
-   it('should return 404 if object id is invalid', (done) => {
+  it('should return 404 if object id is invalid', (done) => {
     var hexId = '59fb66fb22c7f09c7ae5288X';
     request(app)
-    .delete(`/todos/${hexId}`)
-    .expect(404)
-    .end((error, response) => {
-      if (error) {
-        return done(error);
-      }
-      done();
-    })
+      .delete(`/todos/${hexId}`)
+      .expect(404)
+      .end((error, response) => {
+        if (error) {
+          return done(error);
+        }
+        done();
+      })
   });
 });
 
@@ -175,7 +159,7 @@ describe('PATCH /todos/:id', () => {
       .expect((res) => {
         expect(res.body.todo.text).toBe(text);
         expect(res.body.todo.completed).toBe(true);
-        expect(typeof res.body.todo.completedAt).toBe('number'); 
+        expect(typeof res.body.todo.completedAt).toBe('number');
       })
       .end(done);
   });
@@ -199,3 +183,78 @@ describe('PATCH /todos/:id', () => {
       .end(done);
   });
 });
+
+describe('GET /users/me', () => {
+  it('should return user if authenticated', (done) => {
+    request(app)
+      .get('/users/me')
+      .set('x-auth', users[0].tokens[0].token)
+      .expect(200)
+      .expect((response) => {
+        expect(response.body._id).toBe(users[0]._id.toHexString());
+        expect(response.body.email).toBe(users[0].email);
+      })
+      .end(done);
+  });
+
+  it('should return a 401 if not authenticated', (done) => {
+    request(app)
+      .get('/users/me')
+      .expect(401)
+      .expect((response) => {
+        expect(response.body).toEqual({});
+      })
+      .end(done);
+  });
+});
+
+describe('POST /users', () => {
+  it('should create a user', (done) => {
+    var email = 'alanjhill@hotmail.com';
+    var password ='password1';
+
+    request(app)
+    .post('/users')
+    .send({email, password})
+    .expect(200)
+    .expect((response) => {
+      expect(response.headers['x-auth']).toExist;
+      expect(response.body._id).toExist;
+      expect(response.body.email).toBe(email);
+    })
+    .end((error) => {
+      if (error) {
+        return done(error);
+      }
+      
+      User.findOne({email}).then((user) => {
+        expect(user).toExist;
+        expect(user.password).not.toBe(password);
+        done();
+      });
+    });
+  });
+
+  it('should return validation errors if request invalid', (done) => {
+    var email = 'invalidemail';
+    var password = 'pas';
+
+    request(app)
+    .post('users')
+    .send({email, password})
+    .expect(401)
+    done();
+
+  });
+
+  it('should not create user if email in use', (done) => {
+    var email = 'alanjhill@hotmail.com';
+    var password = 'password';
+
+    request(app)
+    .post('/users')
+    .send({email, password})
+    .expect(400);
+    done();
+  });
+})
