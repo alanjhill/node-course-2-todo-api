@@ -1,6 +1,6 @@
 const {SHA256} = require('crypto-js');
 const jwt = require('jsonwebtoken');
-const brcypt = require('bcryptjs');
+const bcrypt = require('bcryptjs');
 
 
 var password = "123abc!";
@@ -10,7 +10,7 @@ var password = "123abc!";
 //   });
 // });
 var hashedPassword = "$2a$10$7QgNuBlLOta2ijj4X1G3L.QuNSfyc3Q.XYP7rS0HFvVaLmDF38sYu";
-brcypt.compare(password, hashedPassword, (error, result) => {
+bcrypt.compare(password, hashedPassword, (error, result) => {
   console.log("result", result);
 });
 
